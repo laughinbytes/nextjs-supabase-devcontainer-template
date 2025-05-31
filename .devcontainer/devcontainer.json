@@ -1,0 +1,82 @@
+// .devcontainer/devcontainer.json
+{
+  "name": "Ubuntu Dev Environment (Next.js, Supabase, pnpm)",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-22.04",
+  "features": {
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "installZsh": true,
+      "configureZshAsDefaultShell": true,
+      "username": "vscode",
+      "uid": "1000",
+      "gid": "1000",
+      "upgradePackages": true
+    },
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "lts",
+      "pnpm": "latest"
+    },
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+      "version": "latest",
+      "moby": true,
+      "dockerDashComposeVersion": "v2"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "Prisma.prisma",
+        "ms-azuretools.vscode-docker",
+        "GitHub.copilot",
+        "streetsidesoftware.code-spell-checker",
+        "yoavbls.pretty-ts-errors",
+        "bradlc.vscode-tailwindcss",
+        "Supabase.supabase"
+      ],
+      "settings": {
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "[typescript]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+        "[typescriptreact]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+        "files.eol": "\n",
+        "terminal.integrated.defaultProfile.linux": "zsh",
+        "typescript.tsdk": "node_modules/typescript/lib",
+        "editor.codeActionsOnSave": { "source.fixAll.eslint": "explicit" },
+        "prettier.useEditorConfig": false,
+        "prettier.singleQuote": true,
+        "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact"]
+      }
+    }
+  },
+  "forwardPorts": [
+    3000,    // Next.js dev server
+    54321,   // Supabase API Gateway
+    54322,   // Supabase DB
+    54323,   // Supabase Studio
+    54324    // Supabase Inbucket
+  ],
+  "portsAttributes": {
+    "3000": { "label": "Next.js App", "onAutoForward": "openPreview" },
+    "54321": { "label": "Supabase API" },
+    "54322": { "label": "Supabase DB" },
+    "54323": { "label": "Supabase Studio", "onAutoForward": "openBrowser" },
+    "54324": { "label": "Supabase Inbucket", "onAutoForward": "openBrowser" }
+  },
+  "onCreateCommand": "sudo chown vscode .",
+  // 使用字符串数组来定义 postCreateCommand，每个元素是一个命令
+  "postCreateCommand": [
+    "npm install -g supabase-cli",
+    "if [ -f package.json ]; then pnpm install --shamefully-hoist; else echo 'No package.json found. Skipping pnpm install.'; fi",
+    "if [ -n \"${GIT_AUTHOR_NAME:-}\" ]; then git config --global user.name \"${GIT_AUTHOR_NAME}\" && echo 'Git user.name configured from GIT_AUTHOR_NAME environment variable.'; else echo 'GIT_AUTHOR_NAME environment variable not found. Git user.name not automatically set by this script.'; fi",
+    "if [ -n \"${GIT_AUTHOR_EMAIL:-}\" ]; then git config --global user.email \"${GIT_AUTHOR_EMAIL}\" && echo 'Git user.email configured from GIT_AUTHOR_EMAIL environment variable.'; else echo 'GIT_AUTHOR_EMAIL environment variable not found. Git user.email not automatically set by this script.'; fi",
+    "echo 'Note: Gitpod typically sets your Git identity automatically. For local VS Code, if GIT_AUTHOR_NAME/EMAIL were not passed from host, or if this script did not set them, configure manually: git config --global user.name \"Your Name\" and git config --global user.email \"your.email@example.com\"'"
+  ],
+  "postStartCommand": "if [ -d \"supabase\" ]; then nohup supabase start > $HOME/supabase-start.log 2>&1 & else echo \"Supabase not initialized in this project. Run 'supabase init' manually if needed.\"; fi",
+  "postAttachCommand": {
+    "nextDev": "if [ -f package.json ] && grep -q '\"dev\":' package.json; then pnpm dev; else echo \"No 'dev' script found in package.json. Start your app manually.\"; fi",
+    "showSupabaseStatus": "supabase status"
+  },
+  "remoteUser": "vscode",
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}"
+}
